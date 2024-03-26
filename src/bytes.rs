@@ -1,7 +1,5 @@
 use std::{
-    borrow::Cow,
-    cmp::max,
-    ops::{BitXor, Index},
+    borrow::Cow, cmp::max, fmt::Display, ops::{BitXor, Index}
 };
 
 use encoding_rs::Encoding;
@@ -19,6 +17,12 @@ impl From<&[u8]> for Bytes {
     fn from(value: &[u8]) -> Self {
         let value = Vec::from(value);
         Self(value)
+    }
+}
+
+impl Display for Bytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.to_hex().fmt(f)
     }
 }
 
@@ -44,6 +48,14 @@ impl BitXor for Bytes {
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         Self::xor(&self, &rhs)
+    }
+}
+
+impl BitXor for &Bytes {
+    type Output = Bytes;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Bytes::xor(self, rhs)
     }
 }
 

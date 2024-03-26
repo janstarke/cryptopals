@@ -6,7 +6,7 @@ use std::{
 
 use encoding_rs::Encoding;
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Bytes(Vec<u8>);
 
 impl From<Vec<u8>> for Bytes {
@@ -64,6 +64,14 @@ impl Bytes {
     pub fn to_base64(&self) -> String {
         use base64::prelude::*;
         BASE64_STANDARD.encode(&self[..])
+    }
+
+    pub fn from_string(value: &str, encoding: &'static Encoding) -> Self {
+        Self::from(&encoding.encode(value).0[..])
+    }
+
+    pub fn from_ascii(value: &str) -> Self {
+        Self::from_string(value, encoding_rs::WINDOWS_1252)
     }
 
     pub fn to_string<'a, 's>(&'s self, encoding: &'static Encoding) -> (Cow<'a, str>, bool)

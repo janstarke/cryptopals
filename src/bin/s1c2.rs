@@ -10,6 +10,7 @@ fn main() -> Result<()> {
     let key = Bytes::from_hex(
         "686974207468652062756c6c277320657965")?;
     let output = (input ^ key).to_hex();
+    assert_eq!(output, "746865206b696420646f6e277420706c6179");
     println!("{output}");
     Ok(())
 }

@@ -1,12 +1,23 @@
 use std::{
+    borrow::Cow,
     cmp::max,
     ops::{BitXor, Index},
 };
 
+use encoding_rs::Encoding;
+
+#[derive(Clone)]
 pub struct Bytes(Vec<u8>);
 
 impl From<Vec<u8>> for Bytes {
     fn from(value: Vec<u8>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&[u8]> for Bytes {
+    fn from(value: &[u8]) -> Self {
+        let value = Vec::from(value);
         Self(value)
     }
 }
@@ -32,18 +43,7 @@ impl BitXor for Bytes {
     type Output = Bytes;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        let mut ctr_left = 0;
-        let mut ctr_right = 0;
-        let bytes_count = max(self.0.len(), rhs.0.len());
-        let mut result = Vec::with_capacity(bytes_count);
-
-        for _ in 0..bytes_count {
-            result.push(self[ctr_left] ^ rhs[ctr_right]);
-            ctr_left = (ctr_left + 1) % self.0.len();
-            ctr_right = (ctr_right + 1) % rhs.0.len();
-        }
-
-        Self::from(result)
+        Self::xor(&self, &rhs)
     }
 }
 
@@ -64,5 +64,27 @@ impl Bytes {
     pub fn to_base64(&self) -> String {
         use base64::prelude::*;
         BASE64_STANDARD.encode(&self[..])
+    }
+
+    pub fn to_string<'a, 's>(&'s self, encoding: &'static Encoding) -> (Cow<'a, str>, bool)
+    where
+        's: 'a,
+    {
+        encoding.decode_without_bom_handling(&self[..])
+    }
+
+    pub fn xor(lhs: &Self, rhs: &Self) -> Self {
+        let mut ctr_left = 0;
+        let mut ctr_right = 0;
+        let bytes_count = max(lhs.0.len(), rhs.0.len());
+        let mut result = Vec::with_capacity(bytes_count);
+
+        for _ in 0..bytes_count {
+            result.push(lhs[ctr_left] ^ rhs[ctr_right]);
+            ctr_left = (ctr_left + 1) % lhs.0.len();
+            ctr_right = (ctr_right + 1) % rhs.0.len();
+        }
+
+        Self::from(result)
     }
 }

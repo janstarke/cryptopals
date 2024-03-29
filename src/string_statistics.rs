@@ -1,3 +1,62 @@
+use getset::Getters;
+use lazy_static::lazy_static;
+use std::collections::{hash_map::Entry, HashMap};
+
+use crate::chi_squared_test;
+
+#[derive(Getters)]
+#[getset(get = "pub")]
+pub struct LanguageProperties {
+    mapping: HashMap<char, f64>,
+    maximum_score: f64,
+}
+
+impl LanguageProperties {
+    pub fn new(mapping: HashMap<char, f64>) -> Self {
+        let maximum_score = mapping.values().sum();
+        Self {
+            mapping,
+            maximum_score,
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref ENGLISH: LanguageProperties = LanguageProperties::new(
+        vec![
+            ('a', 8.2),
+            ('b', 1.5),
+            ('c', 1.8),
+            ('d', 4.3),
+            ('e', 12.7),
+            ('f', 2.2),
+            ('g', 2.0),
+            ('h', 6.1),
+            ('i', 7.0),
+            ('j', 0.15),
+            ('k', 0.77),
+            ('l', 4.0),
+            ('m', 1.4),
+            ('n', 6.7),
+            ('o', 7.5),
+            ('p', 1.9),
+            ('q', 0.095),
+            ('r', 6.0),
+            ('s', 6.3),
+            ('t', 9.1),
+            ('u', 2.8),
+            ('v', 0.98),
+            ('w', 2.4),
+            ('x', 0.15),
+            ('y', 2.0),
+            ('z', 0.074),
+        ]
+        .into_iter()
+        .map(|(ch, sc)| (ch, sc / 100.0))
+        .collect()
+    );
+}
+
 pub trait CharacterFrequency {
     fn character_frequency_abs(self, ch: char) -> usize;
     fn character_frequency_rel(self, ch: char) -> Option<f64>;
@@ -6,6 +65,10 @@ pub trait CharacterFrequency {
     fn words(self) -> usize;
     fn avg_word_length(self) -> Option<f64>;
     fn lowercase_words(self) -> Option<f64>;
+
+    /// scores the given text. zero means maximum similarity, a higher valuse
+    /// means less similarity
+    fn language_score(self, language: &LanguageProperties) -> f64;
 }
 
 impl CharacterFrequency for &str {
@@ -80,6 +143,27 @@ impl CharacterFrequency for &str {
                     .try_into()
                     .unwrap();
                 Some(f64::from(lowercase_words) / f64::from(word_count))
+            }
+        }
+    }
+
+    fn language_score(self, language: &LanguageProperties) -> f64 {
+        match self.len() {
+            0 => 0.0,
+            length => {
+                let characters: Vec<_> = language.mapping().keys().copied().collect();
+                let mut frequencies: HashMap<char, u32> =
+                    characters.iter().map(|ch| (*ch, 0)).collect();
+
+                for ch in self.chars() {
+                    *frequencies.entry(ch).or_default() += 1;
+                }
+                
+                chi_squared_test(
+                    language.mapping(),
+                    &frequencies,
+                    u32::try_from(length).unwrap(),
+                )
             }
         }
     }

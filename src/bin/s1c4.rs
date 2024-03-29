@@ -5,6 +5,7 @@ use std::io::Cursor;
 use anyhow::Result;
 use cryptopals::Bytes;
 use cryptopals::FindSingleXorKey;
+use cryptopals::ENGLISH;
 use encoding_rs::WINDOWS_1252;
 
 /// Single-byte XOR cipher
@@ -16,16 +17,17 @@ fn main() -> Result<()> {
         if line.len() == 60 {
             let input = Bytes::from_ascii(&line);
             let mut printed_line = false;
-            for key in input.find_single_xor_key() {
+            for (key, score) in input.sort_single_xor_keys(&ENGLISH) {
                 if ! printed_line {
                     printed_line = true;
-                    println!("investigating line {lineno}: {line:30}...");
+                    //println!("investigating line {lineno}: {line:30}...");
                 }
                 let decrypted = &input ^ &key;
                 println!(
-                    "  found key 0x{key:02} for line {lineno}, result is '{decrypted}'",
-                    decrypted = decrypted.to_string(WINDOWS_1252).0
-                )
+                    "  found key 0x{key:02} for line {lineno} with score {score}, result is '{decrypted}'",
+                decrypted = decrypted.to_string(WINDOWS_1252).0
+                );
+                break;
             }
         }
     }

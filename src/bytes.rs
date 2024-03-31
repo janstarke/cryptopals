@@ -2,10 +2,12 @@ use std::{
     borrow::Cow,
     cmp::max,
     fmt::{Debug, Display},
+    io::{BufReader, Read},
     iter,
     ops::{BitXor, Index, Sub},
 };
 
+use base64ct::Base64;
 use encoding_rs::{Encoding, WINDOWS_1252};
 
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -91,7 +93,7 @@ impl Sub for &Bytes {
     /// let b1 = Bytes::from_ascii("this is a test");
     /// let b2 = Bytes::from_ascii("wokka wokka!!!");
     /// assert_eq!(&b1 - &b2, 37);
-    /// 
+    ///
     /// let b1 = Bytes::from_ascii("this is a test");
     /// let b2 = Bytes::from_ascii("");
     /// assert_eq!(&b1 - &b2, b1.count_ones());
@@ -140,8 +142,20 @@ impl Bytes {
     }
 
     pub fn from_base64(value: &str) -> anyhow::Result<Self> {
-        use base64::prelude::*;
-        Ok(Self::from(BASE64_STANDARD.decode(value)?))
+        use base64ct::Encoding;
+        Ok(Self::from(Base64::decode_vec(value).unwrap()))
+    }
+
+    pub fn from_base64_stream<R>(reader: R) -> anyhow::Result<Self>
+    where
+        R: Read,
+    {
+        use base64ct::Encoding;
+        let mut reader = BufReader::new(reader);
+        let mut buf = Vec::new();
+        let _ = reader.read_to_end(&mut buf)?;
+        let _ = Base64::decode_in_place(&mut buf);
+        Ok(Self::from(buf))
     }
 
     pub fn to_hex(&self) -> String {
@@ -149,8 +163,8 @@ impl Bytes {
     }
 
     pub fn to_base64(&self) -> String {
-        use base64::prelude::*;
-        BASE64_STANDARD.encode(&self[..])
+        use base64ct::Encoding;
+        Base64::encode_string(&self[..])
     }
 
     pub fn from_string(value: &str, encoding: &'static Encoding) -> Self {

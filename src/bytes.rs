@@ -94,7 +94,7 @@ impl Sub for &Bytes {
     /// 
     /// let b1 = Bytes::from_ascii("this is a test");
     /// let b2 = Bytes::from_ascii("");
-    /// assert_eq!(&b1 - &b2, 48);
+    /// assert_eq!(&b1 - &b2, b1.count_ones());
     /// ```
     fn sub(self, rhs: Self) -> Self::Output {
         // extend the shorter iterator with zeroes
@@ -170,6 +170,14 @@ impl Bytes {
 
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn count_ones(&self) -> u32 {
+        self.0.iter().map(|b| b.count_ones()).sum()
     }
 
     pub fn xor(lhs: &Self, rhs: &Self) -> Self {

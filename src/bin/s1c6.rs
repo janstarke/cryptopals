@@ -12,7 +12,6 @@ use encoding_rs::WINDOWS_1252;
 /// combination.
 fn main() -> Result<()> {
     find_with(|s| s.simple_english_score(), "simple")?;
-    find_with(|s| s.language_score(&ENGLISH), "Chi²")?;
     Ok(())
 }
 
@@ -21,19 +20,25 @@ fn find_with(_score_fn: fn(&str) -> f64, _caption: &str) -> Result<()> {
 
     let mut key_sizes = Vec::new();
     for keysize in 2..40 {
-        let block1 = Bytes::from(&input[0..keysize]);
-        let block2 = Bytes::from(&input[keysize..2 * keysize]);
-        let ks = u32::try_from(keysize).unwrap();
-        let mut distance = block1 - block2;
-
-        if distance % ks == 0 {
-            distance /= ks;
+        let blocks = input.chunkify(keysize);
+        let mut distance = 0.0;
+        for idx in 0..blocks.len() / 2 {
+            let block1 = Bytes::from(&blocks[idx][..]);
+            let block2 = Bytes::from(&blocks[idx + 1][..]);
+            distance += f64::from(block1 - block2);
         }
+
+        let mut distance = (distance / f64::from(u32::try_from(blocks.len() / 2).unwrap())).round();
+
+        // normalize
+        distance /= f64::from(u32::try_from(keysize).unwrap());
+
         key_sizes.push((keysize, distance));
     }
-    key_sizes.sort_by(|lhs, rhs| lhs.1.cmp(&rhs.1));
+    key_sizes.sort_by(|lhs, rhs| lhs.1.total_cmp(&rhs.1));
 
     for keysize in key_sizes.into_iter().map(|x| x.0) {
+        //println!("trying keysize {keysize}");
         let key = brute_with_keysize(keysize, &input);
         assert_eq!(key.len(), keysize);
         let decrypted = (&input ^ &key).to_string(WINDOWS_1252).0.to_string();
@@ -79,4 +84,3 @@ fn transpose2<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
         })
         .collect()
 }
-

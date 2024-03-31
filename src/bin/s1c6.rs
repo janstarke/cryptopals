@@ -22,13 +22,17 @@ fn find_with(_score_fn: fn(&str) -> f64, _caption: &str) -> Result<()> {
     for keysize in 2..40 {
         let blocks = input.chunkify(keysize);
         let mut distance = 0.0;
-        for idx in 0..blocks.len() / 2 {
-            let block1 = Bytes::from(&blocks[idx][..]);
-            let block2 = Bytes::from(&blocks[idx + 1][..]);
-            distance += f64::from(block1 - block2);
+        let mut count: u32 = 0;
+        for idx1 in 0..blocks.len() {
+            for idx2 in 0..idx1 {
+                let block1 = Bytes::from(&blocks[idx1][..]);
+                let block2 = Bytes::from(&blocks[idx2][..]);
+                distance += f64::from(block1 - block2);
+                count += 1;
+            }
         }
 
-        let mut distance = (distance / f64::from(u32::try_from(blocks.len() / 2).unwrap())).round();
+        let mut distance = (distance / f64::from(count)).round();
 
         // normalize
         distance /= f64::from(u32::try_from(keysize).unwrap());

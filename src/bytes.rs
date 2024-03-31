@@ -1,5 +1,9 @@
 use std::{
-    borrow::Cow, cmp::max, fmt::{Debug, Display}, ops::{BitXor, Index}
+    borrow::Cow,
+    cmp::max,
+    fmt::{Debug, Display},
+    iter,
+    ops::{BitXor, Index, Sub},
 };
 
 use encoding_rs::{Encoding, WINDOWS_1252};
@@ -77,6 +81,59 @@ impl BitXor for &Bytes {
     }
 }
 
+impl Sub for &Bytes {
+    type Output = u32;
+
+    /// calculate the hamming distance
+    ///
+    /// ```rust
+    /// use cryptopals::Bytes;
+    /// let b1 = Bytes::from_ascii("this is a test");
+    /// let b2 = Bytes::from_ascii("wokka wokka!!!");
+    /// assert_eq!(&b1 - &b2, 37);
+    /// 
+    /// let b1 = Bytes::from_ascii("this is a test");
+    /// let b2 = Bytes::from_ascii("");
+    /// assert_eq!(&b1 - &b2, 48);
+    /// ```
+    fn sub(self, rhs: Self) -> Self::Output {
+        // extend the shorter iterator with zeroes
+        let (short, long) = if self.len() < rhs.len() {
+            (
+                self.0.iter().chain(iter::once(&0x00u8).cycle()),
+                rhs.0.iter(),
+            )
+        } else {
+            (
+                rhs.0.iter().chain(iter::once(&0x00u8).cycle()),
+                self.0.iter(),
+            )
+        };
+
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        short
+            .zip(long)
+            .map(|(lhs, rhs)| (lhs ^ rhs).count_ones())
+            .sum()
+    }
+}
+
+impl Sub for Bytes {
+    type Output = u32;
+
+    /// calculate the hamming distance
+    ///
+    /// ```rust
+    /// use cryptopals::Bytes;
+    /// let b1 = Bytes::from_ascii("this is a test");
+    /// let b2 = Bytes::from_ascii("wokka wokka!!!");
+    /// assert_eq!(b1 - b2, 37);
+    /// ```
+    fn sub(self, rhs: Self) -> Self::Output {
+        (&self) - (&rhs)
+    }
+}
+
 impl Bytes {
     pub fn from_hex(value: &str) -> anyhow::Result<Self> {
         Ok(Self::from(hex::decode(value)?))
@@ -109,6 +166,10 @@ impl Bytes {
         's: 'a,
     {
         encoding.decode_without_bom_handling(&self[..])
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
     pub fn xor(lhs: &Self, rhs: &Self) -> Self {

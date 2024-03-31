@@ -4,7 +4,7 @@ use std::{
 
 use encoding_rs::Encoding;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Bytes(Vec<u8>);
 
 impl From<Vec<u8>> for Bytes {
@@ -17,6 +17,18 @@ impl From<&[u8]> for Bytes {
     fn from(value: &[u8]) -> Self {
         let value = Vec::from(value);
         Self(value)
+    }
+}
+
+impl From<&u8> for Bytes {
+    fn from(value: &u8) -> Self {
+        Self(vec![*value])
+    }
+}
+
+impl From<u8> for Bytes {
+    fn from(value: u8) -> Self {
+        Self(vec![value])
     }
 }
 

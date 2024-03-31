@@ -10,3 +10,6 @@ pub use xor::*;
 
 mod statistics;
 pub use statistics::*;
+
+mod string_db;
+pub use string_db::*;

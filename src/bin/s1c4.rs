@@ -5,6 +5,7 @@ use std::io::Cursor;
 use anyhow::Result;
 use cryptopals::Bytes;
 use cryptopals::FindSingleXorKey;
+use cryptopals::StringDb;
 use cryptopals::ENGLISH;
 use encoding_rs::WINDOWS_1252;
 
@@ -13,7 +14,20 @@ use encoding_rs::WINDOWS_1252;
 /// combination. 
 fn main() -> Result<()> {
     let reader = BufReader::new(Cursor::new(CHALLENGE_DATA));
-    for (lineno, line) in reader.lines().map_while(Result::ok).enumerate() {
+    let mut db = StringDb::default();
+    for line in reader.lines().map_while(Result::ok) {
+        if !line.is_empty() {
+            db.add_original(
+                Bytes::from_ascii(&line), 
+                (0x01u8..0xffu8).map(Bytes::from));
+        }
+    }
+
+    for entry in db.iter() {
+        println!("{} ({:04.2}) => {}", entry.key(), entry.score(), entry.decrypted());
+    }
+
+        /*
         if line.len() == 60 {
             let input = Bytes::from_ascii(&line);
             let mut printed_line = false;
@@ -30,7 +44,8 @@ fn main() -> Result<()> {
                 break;
             }
         }
-    }
+         */
+    
     Ok(())
 }
 

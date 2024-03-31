@@ -24,7 +24,7 @@ fn find_with(score_fn: fn(&str) -> f64, caption: &str) -> Result<()> {
 
     let mut candidate = Candidate {
         score: f64::MAX,
-        key: Bytes::from(vec![]),
+        key: 0,
         lineno: 0,
         decrypted: String::new(),
     };
@@ -38,7 +38,7 @@ fn find_with(score_fn: fn(&str) -> f64, caption: &str) -> Result<()> {
                 .next()
                 .unwrap();
             if score < candidate.score {
-                let decrypted = (&key ^ &raw).to_string(WINDOWS_1252).0.to_string();
+                let decrypted = (&key.into() ^ &raw).to_string(WINDOWS_1252).0.to_string();
                 candidate = Candidate {
                     score,
                     key,
@@ -59,7 +59,7 @@ fn find_with(score_fn: fn(&str) -> f64, caption: &str) -> Result<()> {
 
 struct Candidate {
     score: f64,
-    key: Bytes,
+    key: u8,
     lineno: usize,
     decrypted: String,
 }

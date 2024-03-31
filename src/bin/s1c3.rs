@@ -13,7 +13,7 @@ fn main() -> Result<()> {
 
     let key_candidates = input.sort_single_xor_keys(|s| s.simple_english_score());
     let (key, score) = key_candidates.first().unwrap();
-    let decrypted = &input ^ key;
+    let decrypted = &input ^ &key.into();
     println!(
         "found key 0x{key} with score {score}, result is '{decrypted:?}'",
         decrypted = decrypted.to_string(WINDOWS_1252).0

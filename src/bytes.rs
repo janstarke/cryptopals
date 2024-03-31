@@ -208,4 +208,8 @@ impl Bytes {
 
         Self::from(result)
     }
+
+    pub fn chunkify(&self, size: usize) -> Vec<Vec<u8>> {
+        self.0.chunks_exact(size).map(Vec::from).collect()
+    }
 }

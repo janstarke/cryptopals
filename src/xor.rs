@@ -39,8 +39,8 @@ impl FindSingleXorKey for Bytes {
             let result = Bytes::xor(self, &key_bytes);
             let content = result.to_string(encoding_rs::WINDOWS_1252).0;
 
-            let score = content.to_lowercase().language_score(language);
-            //let score = content.simple_english_score();
+            //let score = content.to_lowercase().language_score(language);
+            let score = content.simple_english_score();
             if ! score.is_nan() {
                 keys.push((key_bytes, score));
             }

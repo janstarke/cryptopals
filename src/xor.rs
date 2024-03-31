@@ -39,11 +39,11 @@ impl FindSingleXorKey for Bytes {
             let result = Bytes::xor(self, &key_bytes);
             let content = result.to_string(encoding_rs::WINDOWS_1252).0;
 
-            //let score = content.to_lowercase().language_score(language);
-            let score = content.simple_english_score();
-            //if ! score.is_nan() {
+            let score = content.to_lowercase().language_score(language);
+            //let score = content.simple_english_score();
+            if ! score.is_nan() {
                 keys.push((key_bytes, score));
-            //}
+            }
         }
         keys.sort_by(|e1, e2| e1.1.total_cmp(&e2.1));
         keys

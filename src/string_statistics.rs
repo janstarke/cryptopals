@@ -1,6 +1,7 @@
 use getset::Getters;
 use lazy_static::lazy_static;
-use std::collections::{hash_map::Entry, HashMap};
+use levenshtein::levenshtein;
+use std::collections::HashMap;
 
 use crate::chi_squared_test;
 
@@ -18,6 +19,10 @@ impl LanguageProperties {
             mapping,
             maximum_score,
         }
+    }
+
+    pub fn space_score(&self) -> f64 {
+        self.mapping()[&'e'] * 1.0
     }
 }
 
@@ -69,6 +74,8 @@ pub trait CharacterFrequency {
     /// scores the given text. zero means maximum similarity, a higher valuse
     /// means less similarity
     fn language_score(self, language: &LanguageProperties) -> f64;
+
+    fn simple_english_score(self) -> f64;
 }
 
 impl CharacterFrequency for &str {
@@ -147,6 +154,25 @@ impl CharacterFrequency for &str {
         }
     }
 
+    fn simple_english_score(self) -> f64 {
+        let pattern = " ETAOINSHRDLU";
+        let language_scores: HashMap<_, _> = pattern
+            .to_lowercase()
+            .char_indices()
+            .map(|(idx, ch)| (ch, pattern.len() - idx))
+            .collect();
+
+        let maximum_achievable = f64::from(u32::try_from(self.len() * pattern.len()).unwrap());
+        let score = self
+            .to_lowercase()
+            .chars()
+            .map(|ch| *language_scores.get(&ch).unwrap_or(&0))
+            .sum::<usize>();
+
+        (1.0 - f64::from(u32::try_from(score).unwrap())/ maximum_achievable)
+            * 100.0
+    }
+
     fn language_score(self, language: &LanguageProperties) -> f64 {
         match self.len() {
             0 => 0.0,
@@ -158,7 +184,7 @@ impl CharacterFrequency for &str {
                 for ch in self.chars() {
                     *frequencies.entry(ch).or_default() += 1;
                 }
-                
+
                 chi_squared_test(
                     language.mapping(),
                     &frequencies,

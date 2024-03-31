@@ -1,11 +1,17 @@
 use std::{
-    borrow::Cow, cmp::max, fmt::Display, ops::{BitXor, Index}
+    borrow::Cow, cmp::max, fmt::{Debug, Display}, ops::{BitXor, Index}
 };
 
-use encoding_rs::Encoding;
+use encoding_rs::{Encoding, WINDOWS_1252};
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Bytes(Vec<u8>);
+
+impl Debug for Bytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.to_string(WINDOWS_1252).0, f)
+    }
+}
 
 impl From<Vec<u8>> for Bytes {
     fn from(value: Vec<u8>) -> Self {
@@ -34,7 +40,7 @@ impl From<u8> for Bytes {
 
 impl Display for Bytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.to_hex().fmt(f)
+        write!(f, "{}", self.to_hex())
     }
 }
 

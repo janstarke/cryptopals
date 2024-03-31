@@ -12,12 +12,21 @@ fn main() -> Result<()> {
         Bytes::from_hex("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")?;
 
     let key_candidates = input.sort_single_xor_keys(&ENGLISH);
+    for (key, score) in key_candidates {
+        let decrypted = &input ^ &key;
+        println!(
+            "found key 0x{key} with score {score}, result is '{decrypted:?}'",
+            decrypted = decrypted.to_string(WINDOWS_1252).0
+        );
+
+    }
+/*
     let (key, score) = key_candidates.first().unwrap();
     let decrypted = &input ^ key;
     println!(
         "found key 0x{key} with score {score}, result is '{decrypted:?}'",
         decrypted = decrypted.to_string(WINDOWS_1252).0
     );
-
+ */
     Ok(())
 }

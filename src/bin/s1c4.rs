@@ -19,7 +19,6 @@ fn main() -> Result<()> {
         score: f64::MAX,
         key: Bytes::from(vec![]),
         lineno: 0,
-        raw: Bytes::from(vec![]),
         decrypted: String::new()
     };
 
@@ -33,7 +32,6 @@ fn main() -> Result<()> {
                     score,
                     key,
                     lineno,
-                    raw,
                     decrypted,
                 };
             }
@@ -49,6 +47,5 @@ struct Candidate {
     score: f64,
     key: Bytes,
     lineno: usize,
-    raw: Bytes,
     decrypted: String
 }

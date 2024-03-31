@@ -1,6 +1,5 @@
 use getset::Getters;
 use lazy_static::lazy_static;
-use levenshtein::levenshtein;
 use std::collections::HashMap;
 
 use crate::chi_squared_test;

@@ -1,9 +1,9 @@
 use crate::string_statistics::CharacterFrequency;
-use crate::{Bytes, LanguageProperties};
+use crate::Bytes;
 
 pub trait FindSingleXorKey {
     fn find_single_xor_key(&self) -> Vec<Bytes>;
-    fn sort_single_xor_keys(&self, language: &LanguageProperties) -> Vec<(Bytes, f64)>;
+    fn sort_single_xor_keys(&self, score_fn: fn(&str) -> f64) -> Vec<(Bytes, f64)>;
 }
 
 impl FindSingleXorKey for Bytes {
@@ -32,16 +32,16 @@ impl FindSingleXorKey for Bytes {
         keys
     }
 
-    fn sort_single_xor_keys(&self, language: &LanguageProperties) -> Vec<(Bytes, f64)> {
+    fn sort_single_xor_keys(&self, score_fn: fn(&str) -> f64) -> Vec<(Bytes, f64)> {
         let mut keys = Vec::new();
         for key in 0x01u8..=0xffu8 {
             let key_bytes = Bytes::from(&[key][..]);
             let result = Bytes::xor(self, &key_bytes);
             let content = result.to_string(encoding_rs::WINDOWS_1252).0;
 
-            //let score = content.to_lowercase().language_score(language);
-            let score = content.simple_english_score();
-            if ! score.is_nan() {
+            let score = score_fn(&content);
+            //let score = content.simple_english_score();
+            if !score.is_nan() {
                 keys.push((key_bytes, score));
             }
         }

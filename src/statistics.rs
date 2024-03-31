@@ -36,6 +36,6 @@ pub fn chi_squared_test(
 
     x_squared + {
         let n0m = SPECIAL_CHARACTERS_PROBABILITY * f64::from(n);
-        (f64::from(n - expected_characters) - n0m).powi(2) / n0m
+        (f64::from(n - expected_characters) - n0m).powi(2) / n0m 
     }
 }

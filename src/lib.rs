@@ -7,3 +7,6 @@ pub use xor::*;
 
 mod scoring;
 pub use scoring::*;
+
+mod transpose;
+pub use transpose::*;

@@ -6,6 +6,7 @@ use cryptopals::FindSingleXorKey;
 use cryptopals::Score;
 use cryptopals::SimpleScoring;
 use encoding_rs::WINDOWS_1252;
+use cryptopals::Transpose;
 
 /// Single-byte XOR cipher
 /// Write a function that takes two equal-length buffers and produces their XOR
@@ -59,7 +60,7 @@ fn find_with(score_fn: impl Score, _caption: &str) -> Result<()> {
 }
 
 fn brute_with_keysize(score_fn: impl Score, keysize: usize, input: &Bytes) -> Bytes {
-    let blocks = transpose2(input.chunkify(keysize));
+    let blocks = input.chunkify(keysize).transpose();
     assert_eq!(blocks.len(), keysize);
     let mut key = Vec::new();
     for block in blocks.into_iter().map(Bytes::from) {
@@ -71,26 +72,4 @@ fn brute_with_keysize(score_fn: impl Score, keysize: usize, input: &Bytes) -> By
         key.push(key_part);
     }
     key.into()
-}
-
-/// transpose a matrix
-/// <https://stackoverflow.com/questions/64498617/how-to-transpose-a-vector-of-vectors-in-rust>
-///
-/// ```rust
-/// let v = vec![vec![1,2,3,4], vec![5,6,7,8]];
-/// let v2 = transpose2(v);
-/// assert_eq!(v2, vec![vec![1,5],vec![2,6],vec![3,7],vec![4,8]]);
-/// ```
-fn transpose2<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
-    assert!(!v.is_empty());
-    let len = v[0].len();
-    let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
-    (0..len)
-        .map(|_| {
-            iters
-                .iter_mut()
-                .map(|n| n.next().unwrap())
-                .collect::<Vec<T>>()
-        })
-        .collect()
 }

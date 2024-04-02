@@ -4,21 +4,23 @@ use std::io::BufReader;
 
 use anyhow::Result;
 use cryptopals::Bytes;
+use cryptopals::ChiSquaredScoring;
 use cryptopals::FindSingleXorKey;
+use cryptopals::Score;
+use cryptopals::SimpleScoring;
 use cryptopals::ENGLISH;
-use cryptopals::CharacterFrequency;
 use encoding_rs::WINDOWS_1252;
 
 /// Single-byte XOR cipher
 /// Write a function that takes two equal-length buffers and produces their XOR
 /// combination.
 fn main() -> Result<()> {
-    find_with(|s| s.simple_english_score(), "simple")?;
-    find_with(|s| s.language_score(&ENGLISH), "Chi²")?;
+    find_with(SimpleScoring, "simple")?;
+    find_with(ChiSquaredScoring::r#for(&ENGLISH), "Chi²")?;
     Ok(())
 }
 
-fn find_with(score_fn: fn(&str) -> f64, caption: &str) -> Result<()> {
+fn find_with(score_fn: impl Score, caption: &str) -> Result<()> {
     let file = File::open("data/4.txt")?;
     let reader = BufReader::new(file);
 

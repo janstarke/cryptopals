@@ -5,12 +5,9 @@ use cryptopals::Bytes;
 use cryptopals::FindSingleXorKey;
 use cryptopals::Score;
 use cryptopals::SimpleScoring;
-use encoding_rs::WINDOWS_1252;
 use cryptopals::Transpose;
+use encoding_rs::WINDOWS_1252;
 
-/// Single-byte XOR cipher
-/// Write a function that takes two equal-length buffers and produces their XOR
-/// combination.
 fn main() -> Result<()> {
     find_with(SimpleScoring, "simple")?;
     Ok(())
@@ -19,6 +16,20 @@ fn main() -> Result<()> {
 fn find_with(score_fn: impl Score, _caption: &str) -> Result<()> {
     let input = Bytes::from_base64_stream(File::open("data/6.txt")?)?;
 
+    let keysize = guess_key_sizes(&input).next().unwrap();
+
+    let key = brute_with_keysize(score_fn, keysize, &input);
+    assert_eq!(key.len(), keysize);
+    let decrypted = (&input ^ &key).to_string(WINDOWS_1252).0.to_string();
+    println!(
+        "found key {key:?}: {decrypted:.20} ...",
+        key = key.to_string(WINDOWS_1252).0
+    );
+
+    Ok(())
+}
+
+fn guess_key_sizes(input: &Bytes) -> impl Iterator<Item = usize> {
     let mut key_sizes = Vec::new();
     for keysize in 2..40 {
         let blocks = input.chunkify(keysize);
@@ -47,16 +58,7 @@ fn find_with(score_fn: impl Score, _caption: &str) -> Result<()> {
         key_sizes.push((keysize, distance));
     }
     key_sizes.sort_by(|lhs, rhs| lhs.1.total_cmp(&rhs.1));
-
-    for keysize in key_sizes.into_iter().map(|x| x.0) {
-        println!("trying keysize {keysize}");
-        let key = brute_with_keysize(score_fn, keysize, &input);
-        assert_eq!(key.len(), keysize);
-        let decrypted = (&input ^ &key).to_string(WINDOWS_1252).0.to_string();
-        println!("found key {key:?}: {decrypted:?}", key=key.to_string(WINDOWS_1252).0);
-    }
-
-    Ok(())
+    key_sizes.into_iter().map(|x| x.0)
 }
 
 fn brute_with_keysize(score_fn: impl Score, keysize: usize, input: &Bytes) -> Bytes {

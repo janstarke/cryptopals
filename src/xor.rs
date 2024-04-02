@@ -9,7 +9,7 @@ pub trait FindSingleXorKey {
 impl FindSingleXorKey for Bytes {
     fn sort_single_xor_keys(&self, score_fn: impl Score) -> Vec<(u8, f64)> {
         let mut keys = Vec::new();
-        for key in 0x01u8..=0xffu8 {
+        for key in 0x00u8..=0xffu8 {
             let key_bytes = Bytes::from(&[key][..]);
             let result = Bytes::xor(self, &key_bytes);
 

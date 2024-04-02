@@ -152,10 +152,10 @@ impl Bytes {
     {
         use base64ct::Encoding;
         let mut reader = BufReader::new(reader);
-        let mut buf = Vec::new();
-        let _ = reader.read_to_end(&mut buf)?;
-        let _ = Base64::decode_in_place(&mut buf);
-        Ok(Self::from(buf))
+        let mut buf = String::new();
+        let _ = reader.read_to_string(&mut buf)?;
+        let decoded = Base64::decode_vec(&buf.replace('\n', "")).unwrap();
+        Ok(Self::from(decoded))
     }
 
     pub fn to_hex(&self) -> String {

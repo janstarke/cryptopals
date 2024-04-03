@@ -1,8 +1,6 @@
-use std::fs::File;
 
 use anyhow::Result;
 use cryptopals::{Bytes, Key, Mode, PadWith, Pkcs7, AES, AES_BLOCKSIZE, IV};
-use encoding_rs::WINDOWS_1252;
 use rand::random;
 
 fn main() -> Result<()> {
@@ -17,11 +15,11 @@ fn main() -> Result<()> {
 
         let encrypted = if use_cbc {
             let iv: IV = random();
-            input.aes_cbc(Mode::Decrypt, &key, &iv)?
+            input.aes_cbc(Mode::Encrypt, &key, &iv)?
         } else {
             input
                 .padded_with(AES_BLOCKSIZE, Pkcs7)?
-                .aes_ecb(Mode::Decrypt, &key)?
+                .aes_ecb(Mode::Encrypt, &key)?
         };
 
         if is_using_cbc(&encrypted) == use_cbc {
@@ -31,11 +29,6 @@ fn main() -> Result<()> {
         }
     }
 
-    let data = Bytes::from_base64_stream(File::open("data/10.txt")?)?;
-    let key = Bytes::from_ascii("YELLOW SUBMARINE").try_into()?;
-    let iv = Bytes::from(vec![0; AES_BLOCKSIZE]).try_into()?;
-    let decrypted = data.aes_cbc(Mode::Decrypt, &key, &iv)?;
-    println!("{}", decrypted.to_string(WINDOWS_1252).0);
     Ok(())
 }
 

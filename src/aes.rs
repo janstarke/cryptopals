@@ -1,7 +1,7 @@
-use openssl::symm::{decrypt, encrypt, Cipher, Crypter};
+use openssl::symm::{Cipher, Crypter};
 use thiserror::Error;
 
-use crate::{Bytes, PadWith, Pkcs7};
+use crate::{Bytes, PadWith, Pkcs7, Unpad};
 
 #[derive(Debug, Error)]
 pub enum AESError {
@@ -24,9 +24,9 @@ pub enum Mode {
     Encrypt,
 }
 
-impl Into<openssl::symm::Mode> for Mode {
-    fn into(self) -> openssl::symm::Mode {
-        match self {
+impl From<Mode> for openssl::symm::Mode {
+    fn from(val: Mode) -> Self {
+        match val {
             Mode::Decrypt => openssl::symm::Mode::Decrypt,
             Mode::Encrypt => openssl::symm::Mode::Encrypt,
         }
@@ -126,6 +126,9 @@ impl AES for Bytes {
                     result.extend(&xored[..]);
                     previous_block = chunk;
                 }
+
+                result = Bytes::from(result).unpadded(Pkcs7)?.into_inner();
+
             }
             Mode::Encrypt => {
                 for chunk in self[..].chunks_exact(AES_BLOCKSIZE).map(Bytes::from) {

@@ -10,7 +10,7 @@ use std::{
 use base64ct::Base64;
 use encoding_rs::{Encoding, WINDOWS_1252};
 
-use crate::{PadWith, PaddingError, PaddingScheme};
+use crate::{PadWith, PaddingError, PaddingScheme, Unpad};
 
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Bytes(Vec<u8>);
@@ -153,14 +153,13 @@ impl PadWith for Bytes {
         self.0.extend(padding_scheme.pad_for(block_size, &self.0[..])?);
         Ok(())
     }
-    
-    fn padded_with(
-        mut self,
-        block_size: usize,
-        padding_scheme: impl PaddingScheme,
-    ) -> Result<Self, PaddingError> {
-        self.0.extend(padding_scheme.pad_for(block_size, &self.0[..])?);
-        Ok(self)
+}
+
+impl Unpad for Bytes {
+    fn unpad_with(&mut self, padding_scheme: impl PaddingScheme) -> Result<(), PaddingError> {
+        let padding_length = padding_scheme.padding_length(&self.0[..])?;
+        self.0.truncate(self.len() - padding_length);
+        Ok(())
     }
 }
 
@@ -239,5 +238,9 @@ impl Bytes {
 
     pub fn chunkify(&self, size: usize) -> Vec<Vec<u8>> {
         self.0.chunks_exact(size).map(Vec::from).collect()
+    }
+
+    pub fn into_inner(self) -> Vec<u8> {
+        self.0
     }
 }

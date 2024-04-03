@@ -4,7 +4,7 @@ use std::{
     fmt::{Debug, Display},
     io::{BufReader, Read},
     iter,
-    ops::{BitXor, Index, Sub},
+    ops::{Add, BitXor, Index, Sub},
 };
 
 use base64ct::Base64;
@@ -141,6 +141,25 @@ impl Sub for Bytes {
     /// ```
     fn sub(self, rhs: Self) -> Self::Output {
         (&self) - (&rhs)
+    }
+}
+
+impl Add for Bytes {
+    type Output = Bytes;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self.0.extend(rhs.0);
+        self
+    }
+}
+
+impl Add for &Bytes {
+    type Output = Bytes;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut res = self.0.clone();
+        res.extend(&rhs.0[..]);
+        Self::Output::from(res)
     }
 }
 

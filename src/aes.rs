@@ -70,10 +70,20 @@ impl Key {
             Key::AES256(key_bytes) => key_bytes,
         }
     }
+
+    pub fn random_128() -> Self {
+        Self::AES128(rand::random())
+    }
+    pub fn random_192() -> Self {
+        Self::AES192(rand::random())
+    }
+    pub fn random_256() -> Self {
+        Self::AES256(rand::random())
+    }
 }
 
 pub const AES_BLOCKSIZE: usize = 16;
-type IV = [u8; AES_BLOCKSIZE];
+pub type IV = [u8; AES_BLOCKSIZE];
 
 impl TryFrom<Bytes> for IV {
     type Error = AESError;

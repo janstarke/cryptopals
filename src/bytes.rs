@@ -27,6 +27,12 @@ impl From<Vec<u8>> for Bytes {
     }
 }
 
+impl Into<Vec<u8>> for Bytes {
+    fn into(self) -> Vec<u8> {
+        self.0
+    }
+}
+
 impl From<&[u8]> for Bytes {
     fn from(value: &[u8]) -> Self {
         let value = Vec::from(value);
@@ -146,6 +152,15 @@ impl PadWith for Bytes {
     ) -> Result<(), PaddingError> {
         self.0.extend(padding_scheme.pad_for(block_size, &self.0[..])?);
         Ok(())
+    }
+    
+    fn padded_with(
+        mut self,
+        block_size: usize,
+        padding_scheme: impl PaddingScheme,
+    ) -> Result<Self, PaddingError> {
+        self.0.extend(padding_scheme.pad_for(block_size, &self.0[..])?);
+        Ok(self)
     }
 }
 

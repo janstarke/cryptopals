@@ -13,3 +13,6 @@ pub use transpose::*;
 
 mod padding;
 pub use padding::*;
+
+mod aes;
+pub use aes::*;

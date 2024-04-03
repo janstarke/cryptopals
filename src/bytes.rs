@@ -10,6 +10,8 @@ use std::{
 use base64ct::Base64;
 use encoding_rs::{Encoding, WINDOWS_1252};
 
+use crate::{PadWith, PaddingError, PaddingScheme};
+
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Bytes(Vec<u8>);
 
@@ -133,6 +135,17 @@ impl Sub for Bytes {
     /// ```
     fn sub(self, rhs: Self) -> Self::Output {
         (&self) - (&rhs)
+    }
+}
+
+impl PadWith for Bytes {
+    fn pad_with(
+        &mut self,
+        block_size: usize,
+        padding_scheme: impl PaddingScheme,
+    ) -> Result<(), PaddingError> {
+        self.0.extend(padding_scheme.pad_for(block_size, &self.0[..])?);
+        Ok(())
     }
 }
 

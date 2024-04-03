@@ -10,3 +10,6 @@ pub use scoring::*;
 
 mod transpose;
 pub use transpose::*;
+
+mod padding;
+pub use padding::*;

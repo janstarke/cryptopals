@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 
 use anyhow::Result;
 use cryptopals::{Bytes, Key, Mode, PadWith, Pkcs7, AES, AES_BLOCKSIZE, IV};
@@ -32,8 +33,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn is_using_cbc(_encrypted: &Bytes) -> bool {
-    true
+fn is_using_cbc(encrypted: &Bytes) -> bool {
+    let chunks = encrypted.chunkify(128 / 8);
+    let chunks_count = chunks.len();
+    let unique_chunks: HashSet<Vec<u8>> = chunks.into_iter().collect();
+
+    unique_chunks.len() >= chunks_count
 }
 
 fn random_bytes() -> Bytes {

@@ -1,4 +1,4 @@
-use openssl::symm::{decrypt, encrypt, Cipher};
+use openssl::symm::{decrypt, encrypt, Cipher, Crypter};
 use thiserror::Error;
 
 use crate::{Bytes, PadWith, Pkcs7};
@@ -13,12 +13,24 @@ pub enum AESError {
 
     #[error("invalid ciphertext length")]
     InvalidCyphertextLength,
+
+    #[error("received unpadded data of length {0}; but data length must be a multiple of the block size")]
+    UnpaddedData(usize),
 }
 
 #[derive(Copy, Clone)]
 pub enum Mode {
     Decrypt,
     Encrypt,
+}
+
+impl Into<openssl::symm::Mode> for Mode {
+    fn into(self) -> openssl::symm::Mode {
+        match self {
+            Mode::Decrypt => openssl::symm::Mode::Decrypt,
+            Mode::Encrypt => openssl::symm::Mode::Encrypt,
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -83,11 +95,19 @@ pub trait AES: Sized {
 
 impl AES for Bytes {
     fn aes_ecb(&self, mode: Mode, key: &Key) -> anyhow::Result<Self> {
-        let result = match mode {
-            Mode::Decrypt => decrypt(key.ecb_cipher(), key.bytes(), None, &self[..])?,
-            Mode::Encrypt => encrypt(key.ecb_cipher(), key.bytes(), None, &self[..])?,
-        };
-        Ok(result.into())
+        if self.len() % AES_BLOCKSIZE != 0 {
+            return Err(AESError::UnpaddedData(self.len()).into());
+        }
+
+        let mut crypter = Crypter::new(key.ecb_cipher(), mode.into(), key.bytes(), None)?;
+        crypter.pad(false);
+        let mut output = vec![0; self.len() + AES_BLOCKSIZE];
+
+        let mut count = 0;
+        count += crypter.update(&self[..], &mut output[count..])?;
+        count += crypter.finalize(&mut output[count..])?;
+
+        Ok(Bytes::from(&output[0..count]))
     }
 
     fn aes_cbc(&self, mode: Mode, key: &Key, iv: &IV) -> anyhow::Result<Self> {
@@ -113,10 +133,10 @@ impl AES for Bytes {
                     result.extend(&encrypted[..]);
                     previous_block = encrypted;
                 }
-                let mut remainder = Bytes::from(self[..].chunks_exact(AES_BLOCKSIZE).remainder());
+                let remainder = Bytes::from(self[..].chunks_exact(AES_BLOCKSIZE).remainder());
                 if !remainder.is_empty() {
-                    remainder.pad_with(AES_BLOCKSIZE, Pkcs7)?;
-                    let encrypted = (remainder ^ previous_block).aes_ecb(mode, key)?;
+                    let encrypted = (remainder.padded_with(AES_BLOCKSIZE, Pkcs7)? ^ previous_block)
+                        .aes_ecb(mode, key)?;
                     result.extend(&encrypted[..]);
                 }
             }
@@ -128,22 +148,35 @@ impl AES for Bytes {
 
 #[cfg(test)]
 mod tests {
-    use crate::padding::PadWith;
-    use crate::{Bytes, Mode, Pkcs7, AES, AES_BLOCKSIZE};
+    use crate::{Bytes, Mode, AES, AES_BLOCKSIZE};
+
+    #[test]
+    fn test_ecb_without_padding() {
+        let test_data = Bytes::from_ascii("Lorem ipsum dolo");
+        let key = Bytes::from_ascii("YELLOW SUBMARINE");
+        assert_eq!(key.len(), 16);
+        let key = key.try_into().unwrap();
+
+        let encrypted = test_data.aes_ecb(Mode::Encrypt, &key).unwrap();
+        let decrypted = encrypted.aes_ecb(Mode::Decrypt, &key).unwrap();
+
+        assert_eq!(test_data, decrypted);
+    }
 
     #[test]
     fn test_cbc() {
         let test_data = Bytes::from_ascii("Lorem ipsum dolor sit amet duis. Qui nulla minim enim est dolor \
         adipisicing eiusmod qui veniam fugiat exercitation dolor. Esse magna qui do exercitation eu dolor consequat \
         elit officia est ex in mollit eiusmod dolore anim proident excepteur culpa.");
-        let key = Bytes::from_ascii("YELLOW SUBMARINE")
-            .padded_with(16, Pkcs7)
-            .unwrap();
+        let key = Bytes::from_ascii("YELLOW SUBMARINE");
         assert_eq!(key.len(), 16);
         let key = key.try_into().unwrap();
 
-        let iv = vec![0;AES_BLOCKSIZE].try_into().unwrap();
+        let iv = vec![0; AES_BLOCKSIZE].try_into().unwrap();
         let encrypted = test_data.aes_cbc(Mode::Encrypt, &key, &iv).unwrap();
+        assert!(encrypted.len() > test_data.len());
+        assert_eq!(encrypted.len() % AES_BLOCKSIZE, 0);
+
         let decrypted = encrypted.aes_cbc(Mode::Decrypt, &key, &iv).unwrap();
 
         assert_eq!(test_data, decrypted);

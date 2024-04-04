@@ -16,3 +16,6 @@ pub use padding::*;
 
 mod aes;
 pub use aes::*;
+
+mod oracle;
+pub use oracle::*;

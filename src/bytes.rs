@@ -262,4 +262,8 @@ impl Bytes {
     pub fn into_inner(self) -> Vec<u8> {
         self.0
     }
+
+    pub fn append(&mut self, b: u8) {
+        self.0.push(b)
+    }
 }

@@ -23,8 +23,6 @@ fn main() -> Result<()> {
     }
     let block_size = block_size.unwrap();
 
-    println!("{block_size} ({} bit)", block_size * 8);
-
     // Discover the block size of the cipher
     assert_eq!(block_size, 16);
 
@@ -33,32 +31,9 @@ fn main() -> Result<()> {
         &"A".repeat(2 * block_size)
     ))?));
 
-    // Knowing the block size, craft an input block that is exactly 1 byte shorter
-    let mut encrypted = encryption_oracle_c12(&Bytes::from_ascii(&"A".repeat(block_size - 1)))?;
-    encrypted = Bytes::from(&encrypted[0..block_size]);
-    assert_eq!(encrypted.len(), block_size);
-
-    // the last position contains the first byte of the plain text
-    let base_block = Bytes::from_ascii(&"A".repeat(block_size - 1));
-    let blocks: HashMap<Bytes, u8> = (0x00..0xff)
-        .map(|b| {
-            let result = encryption_oracle_c12(&(&base_block + &Bytes::from(vec![b]))).unwrap();
-            (Bytes::from(&result[0..block_size]), b)
-        })
-        .collect();
-
-    if let Some(first_byte) = blocks.get(&encrypted) {
-        let ch = *first_byte as char;
-        println!("found first byte to be '{ch}' ({first_byte})");
-    }
-
+    // decrypt the first block
     let mut known_bytes = Bytes::from(vec![]);
     for _ in 0..block_size {
-        println!(
-            "decrypted first block: {}",
-            known_bytes.to_string(WINDOWS_1252).0
-        );
-
         if let Some(b) = grab_next_byte(block_size, &known_bytes)? {
             known_bytes.append(b)
         } else {
@@ -67,7 +42,7 @@ fn main() -> Result<()> {
     }
 
     println!(
-        "decrypted first block: {}",
+        "{}",
         known_bytes.to_string(WINDOWS_1252).0
     );
 

@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
-use cryptopals::{encryption_oracle, Bytes};
+use cryptopals::{encryption_oracle_c11, Bytes};
 
 fn main() -> Result<()> {
     let data = Bytes::from_ascii("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
     for _ in 0..10 {
-        let (encrypted, is_using_cbc_hint) = encryption_oracle(&data)?;
+        let (encrypted, is_using_cbc_hint) = encryption_oracle_c11(&data)?;
 
         if is_using_cbc(&encrypted) == is_using_cbc_hint {
             println!("correct");
@@ -18,6 +18,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// checks if CBC was being used by looking for duplicate blocks
 fn is_using_cbc(encrypted: &Bytes) -> bool {
     let chunks = encrypted.chunkify(128 / 8);
     let chunks_count = chunks.len();
